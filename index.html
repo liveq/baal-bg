@@ -310,22 +310,23 @@
 
         /* 버튼 */
         .btn-process {
-            padding: 16px 48px;
+            padding: 18px 60px;
             background: var(--gold-gradient);
             color: white;
-            border: 2px solid var(--gold-primary);
+            border: 3px solid var(--gold-primary);
             border-radius: var(--border-radius-md);
             font-weight: 700;
-            font-size: 1.1em;
+            font-size: 1.2em;
             cursor: pointer;
             transition: all 0.2s;
             display: block;
             margin: 0 auto;
+            box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3);
         }
 
         .btn-process:hover {
             transform: translateY(-3px);
-            box-shadow: var(--shadow-lg);
+            box-shadow: 0 6px 20px rgba(212, 175, 55, 0.5);
         }
 
         .btn-process:disabled {
@@ -408,9 +409,14 @@
             <!-- 업로드된 이미지 리스트 -->
             <div class="image-list" id="imageList" style="display: none;"></div>
 
+            <!-- 비교 미리보기 -->
+            <div class="comparison-container" id="comparisonContainer">
+                <p class="placeholder-text" id="placeholder" data-ko="이미지를 업로드하면 미리보기에 표시됩니다" data-en="Uploaded images will be shown in preview">이미지를 업로드하면 미리보기에 표시됩니다</p>
+            </div>
+
             <!-- 시작 버튼 -->
             <div style="text-align: center; margin: 20px 0;">
-                <button class="btn-process" id="startBtn" style="display: none;" data-ko="배경 제거 시작" data-en="Start Background Removal">배경 제거 시작</button>
+                <button class="btn-process" id="startBtn" style="display: none;" data-ko="🚀 배경 제거 시작" data-en="🚀 Start Background Removal">🚀 배경 제거 시작</button>
             </div>
 
             <!-- 진행률 -->
@@ -419,11 +425,6 @@
                     <div class="progress-fill" id="progressFill"></div>
                 </div>
                 <p class="progress-text" id="progressText">AI 모델 로딩 중...</p>
-            </div>
-
-            <!-- 비교 미리보기 -->
-            <div class="comparison-container" id="comparisonContainer">
-                <p class="placeholder-text" id="placeholder" data-ko="이미지를 업로드하면 자동으로 배경이 제거됩니다" data-en="Upload an image to automatically remove background">이미지를 업로드하면 자동으로 배경이 제거됩니다</p>
             </div>
 
             <!-- 배경색 옵션 -->
