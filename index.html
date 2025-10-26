@@ -25,7 +25,8 @@
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2886185075996969"
      crossorigin="anonymous"></script>
 
-    <!-- Google Analytics -->
+    <!-- Google Analytics - Disabled for local development -->
+    <!--
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
     <script>
         window.dataLayer = window.dataLayer || [];
@@ -33,10 +34,93 @@
         gtag('js', new Date());
         gtag('config', 'G-XXXXXXXXXX');
     </script>
+    -->
 
     <!-- 공통 스타일 -->
     <link rel="stylesheet" href="_common/common.css">
     <style>
+        /* 이미지 리스트 */
+        .image-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .image-item {
+            position: relative;
+            border: 3px solid var(--border-color);
+            border-radius: var(--border-radius-md);
+            overflow: hidden;
+            cursor: pointer;
+            transition: all 0.2s;
+            aspect-ratio: 1;
+        }
+
+        .image-item:hover {
+            border-color: var(--gold-primary);
+            transform: scale(1.05);
+        }
+
+        .image-item.active {
+            border-color: var(--gold-primary);
+            box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.3);
+        }
+
+        .image-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .image-item .status-badge {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75em;
+            font-weight: 600;
+        }
+
+        .image-item .status-badge.processing {
+            background: var(--gold-primary);
+        }
+
+        .image-item .status-badge.completed {
+            background: #2f9e44;
+        }
+
+        .image-item .status-badge.error {
+            background: #c92a2a;
+        }
+
+        .image-item .remove-btn {
+            position: absolute;
+            top: 5px;
+            left: 5px;
+            background: rgba(255, 0, 0, 0.8);
+            color: white;
+            border: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .image-item:hover .remove-btn {
+            opacity: 1;
+        }
+
         /* 비교 슬라이더 */
         .comparison-container {
             background: var(--bg-accent);
@@ -49,6 +133,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            flex-direction: column;
         }
 
         .comparison-wrapper {
@@ -86,7 +171,7 @@
 
         .slider-handle {
             position: absolute;
-            top: 0;
+            top: 50%;
             left: 50%;
             width: 40px;
             height: 40px;
@@ -94,8 +179,7 @@
             border: 3px solid white;
             border-radius: 50%;
             cursor: ew-resize;
-            transform: translateX(-50%);
-            margin-top: calc(50% - 20px);
+            transform: translate(-50%, -50%);
             box-shadow: var(--shadow-md);
             display: flex;
             align-items: center;
@@ -103,6 +187,26 @@
             color: white;
             font-weight: bold;
             user-select: none;
+            z-index: 10;
+        }
+
+        .thumbnail-nav {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            overflow-x: auto;
+            padding: 10px 0;
+            width: 100%;
+            justify-content: center;
+        }
+
+        .thumbnail-nav::-webkit-scrollbar {
+            height: 6px;
+        }
+
+        .thumbnail-nav::-webkit-scrollbar-thumb {
+            background: var(--gold-primary);
+            border-radius: 3px;
         }
 
         .placeholder-text {
@@ -294,11 +398,19 @@
 
         <main>
             <!-- 이미지 업로드 -->
+            <input type="file" id="fileInput" accept="image/*" multiple style="display: none;">
             <div class="dropzone" id="dropzone">
                 <p>
-                    <span data-ko="이미지를 드래그하거나 클릭하여 업로드" data-en="Drag & drop image or click to upload">이미지를 드래그하거나 클릭하여 업로드</span>
+                    <span data-ko="이미지를 드래그하거나 클릭하여 업로드 (여러 개 선택 가능)" data-en="Drag & drop images or click to upload (Multiple files supported)">이미지를 드래그하거나 클릭하여 업로드 (여러 개 선택 가능)</span>
                 </p>
-                <input type="file" id="fileInput" accept="image/*" style="display: none;">
+            </div>
+
+            <!-- 업로드된 이미지 리스트 -->
+            <div class="image-list" id="imageList" style="display: none;"></div>
+
+            <!-- 시작 버튼 -->
+            <div style="text-align: center; margin: 20px 0;">
+                <button class="btn-process" id="startBtn" style="display: none;" data-ko="배경 제거 시작" data-en="Start Background Removal">배경 제거 시작</button>
             </div>
 
             <!-- 진행률 -->
@@ -355,76 +467,322 @@
 
     <!-- 공통 스크립트 -->
     <script src="_common/common.js"></script>
+
+    <!-- 파일 업로드 초기화 (모듈 외부) -->
+    <script>
+        // 즉시 파일 입력 초기화
+        window.addEventListener('DOMContentLoaded', () => {
+            console.log('=== FILE INPUT INIT START ===');
+
+            const dropzone = document.getElementById('dropzone');
+            const fileInput = document.getElementById('fileInput');
+
+            console.log('dropzone:', dropzone);
+            console.log('fileInput:', fileInput);
+
+            if (dropzone && fileInput) {
+                dropzone.onclick = function() {
+                    console.log('>>> DROPZONE CLICKED <<<');
+                    fileInput.click();
+                };
+                console.log('✅ Click handler attached');
+            } else {
+                console.error('❌ Elements not found!');
+            }
+        });
+    </script>
+
     <script type="module">
         import { removeBackground } from 'https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.4.5/dist/index.mjs';
 
         // 페이지 로드 시 스크롤 맨 위로
         window.scrollTo(0, 0);
 
-        let originalImage = null;
-        let resultBlob = null;
-        let selectedBgColor = 'transparent';
-
-        // 파일 업로드 (DOMContentLoaded 후에 실행)
-        document.addEventListener('DOMContentLoaded', () => {
-            if (window.BaalUtils && window.BaalUtils.initDropzone) {
-                window.BaalUtils.initDropzone('dropzone', 'fileInput', handleFile, {
-                    accept: 'image/*',
-                    maxFiles: 1,
-                    maxSize: 10 * 1024 * 1024
-                });
+        // 다국어 텍스트
+        const i18n = {
+            ko: {
+                modelLoading: 'AI 모델 로딩 중...',
+                modelDownload: '모델 다운로드 중...',
+                processing: '배경 제거 중...',
+                completed: '배경 제거 완료!',
+                error: '배경 제거 실패',
+                waiting: '대기중',
+                done: '완료'
+            },
+            en: {
+                modelLoading: 'Loading AI model...',
+                modelDownload: 'Downloading model...',
+                processing: 'Removing background...',
+                completed: 'Background removal completed!',
+                error: 'Background removal failed',
+                waiting: 'Waiting',
+                done: 'Done'
             }
-        });
+        };
 
-        async function handleFile(files) {
-            if (files.length === 0) return;
+        const getText = (key) => {
+            const lang = document.body.getAttribute('data-lang') || 'ko';
+            return i18n[lang][key] || i18n.ko[key];
+        };
 
-            const file = files[0];
-            originalImage = file;
+        let uploadedImages = [];
+        let processedImages = [];
+        let currentImageIndex = 0;
+        let selectedBgColor = 'transparent';
+        let isProcessing = false;
 
-            // 진행률 표시
-            document.getElementById('progressContainer').style.display = 'block';
-            document.getElementById('progressText').textContent = 'AI 모델 로딩 중...';
-            document.getElementById('progressFill').style.width = '20%';
+        // 파일 업로드 이벤트 (모듈 내부)
+        const initializeApp = () => {
+            const fileInput = document.getElementById('fileInput');
+            const startBtn = document.getElementById('startBtn');
 
-            try {
-                // 배경 제거 실행
-                const imageBlob = await removeBackground(file, {
-                    progress: (key, current, total) => {
-                        const progress = Math.round((current / total) * 100);
-                        document.getElementById('progressFill').style.width = progress + '%';
+            if (!fileInput || !startBtn) {
+                console.error('Required elements not found:', { fileInput, startBtn });
+                return;
+            }
 
-                        if (key === 'compute:inference') {
-                            document.getElementById('progressText').textContent = `배경 제거 중... ${progress}%`;
-                        } else if (key === 'fetch:model') {
-                            document.getElementById('progressText').textContent = `모델 다운로드 중... ${progress}%`;
-                        }
+            console.log('Module initialized with elements:', { fileInput, startBtn });
+
+            // 파일 선택 시
+            fileInput.addEventListener('change', (e) => {
+                console.log('File input changed:', e.target.files);
+                const filesArray = Array.from(e.target.files);
+                console.log('Files array:', filesArray);
+                handleFiles(filesArray);
+            });
+
+            // 드래그 앤 드롭
+            const dropzone = document.getElementById('dropzone');
+            if (dropzone) {
+                ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                    dropzone.addEventListener(eventName, preventDefaults, false);
+                });
+
+                function preventDefaults(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }
+
+                ['dragenter', 'dragover'].forEach(eventName => {
+                    dropzone.addEventListener(eventName, () => {
+                        dropzone.classList.add('active');
+                    }, false);
+                });
+
+                ['dragleave', 'drop'].forEach(eventName => {
+                    dropzone.addEventListener(eventName, () => {
+                        dropzone.classList.remove('active');
+                    }, false);
+                });
+
+                dropzone.addEventListener('drop', (e) => {
+                    const dt = e.dataTransfer;
+                    const files = Array.from(dt.files).filter(f => f.type.startsWith('image/'));
+                    handleFiles(files);
+                }, false);
+
+                console.log('✅ Drag & drop initialized');
+            }
+
+            // 시작 버튼
+            startBtn.addEventListener('click', startProcessing);
+
+            console.log('App initialized successfully');
+        };
+
+        // DOM 준비 확인 및 초기화
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeApp);
+        } else {
+            // DOM이 이미 로드됨
+            initializeApp();
+        }
+
+        function handleFiles(files) {
+            console.log('handleFiles called with:', files);
+            if (files.length === 0) {
+                console.log('No files provided');
+                return;
+            }
+
+            // 이미지 파일만 필터링
+            const imageFiles = files.filter(f => f.type.startsWith('image/'));
+            console.log('Image files filtered:', imageFiles);
+
+            if (imageFiles.length === 0) {
+                console.log('No image files found');
+                window.BaalUtils.showToast('이미지 파일을 선택해주세요.', 'error', 3000);
+                return;
+            }
+
+            // 파일 크기 체크 (10MB)
+            const oversized = imageFiles.filter(f => f.size > 10 * 1024 * 1024);
+            if (oversized.length > 0) {
+                window.BaalUtils.showToast('파일 크기는 10MB 이하여야 합니다.', 'error', 3000);
+                return;
+            }
+
+            uploadedImages = imageFiles.map((file, index) => ({
+                id: Date.now() + index,
+                file: file,
+                status: 'waiting',
+                originalUrl: URL.createObjectURL(file),
+                resultBlob: null,
+                resultUrl: null
+            }));
+
+            displayImageList();
+            document.getElementById('startBtn').style.display = 'block';
+        }
+
+        function displayImageList() {
+            const imageList = document.getElementById('imageList');
+            imageList.style.display = 'grid';
+            imageList.innerHTML = '';
+
+            uploadedImages.forEach((img, index) => {
+                const item = document.createElement('div');
+                item.className = 'image-item';
+                if (index === 0) item.classList.add('active');
+                item.dataset.index = index;
+
+                item.innerHTML = `
+                    <img src="${img.originalUrl}" alt="Image ${index + 1}">
+                    <button class="remove-btn" data-index="${index}">×</button>
+                    <div class="status-badge">${getText('waiting')}</div>
+                `;
+
+                item.addEventListener('click', (e) => {
+                    if (!e.target.classList.contains('remove-btn')) {
+                        selectImage(index);
                     }
                 });
 
-                resultBlob = imageBlob;
+                const removeBtn = item.querySelector('.remove-btn');
+                removeBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    removeImage(index);
+                });
 
-                // 진행률 숨김
-                document.getElementById('progressContainer').style.display = 'none';
+                imageList.appendChild(item);
+            });
+        }
 
-                // 비교 뷰 생성
-                displayComparison(file, imageBlob);
+        function removeImage(index) {
+            URL.revokeObjectURL(uploadedImages[index].originalUrl);
+            if (uploadedImages[index].resultUrl) {
+                URL.revokeObjectURL(uploadedImages[index].resultUrl);
+            }
 
-                // 다운로드 옵션 표시
+            uploadedImages.splice(index, 1);
+
+            if (uploadedImages.length === 0) {
+                document.getElementById('imageList').style.display = 'none';
+                document.getElementById('startBtn').style.display = 'none';
+                document.getElementById('comparisonContainer').innerHTML = `
+                    <p class="placeholder-text" id="placeholder" data-ko="이미지를 업로드하면 자동으로 배경이 제거됩니다" data-en="Upload an image to automatically remove background">이미지를 업로드하면 자동으로 배경이 제거됩니다</p>
+                `;
+                document.getElementById('downloadOptions').style.display = 'none';
+            } else {
+                displayImageList();
+                if (currentImageIndex >= uploadedImages.length) {
+                    selectImage(uploadedImages.length - 1);
+                }
+            }
+        }
+
+        function selectImage(index) {
+            currentImageIndex = index;
+
+            document.querySelectorAll('.image-item').forEach((item, i) => {
+                item.classList.toggle('active', i === index);
+            });
+
+            const img = uploadedImages[index];
+            if (img.resultBlob) {
+                displayComparison(img.file, img.resultBlob);
                 document.getElementById('downloadOptions').style.display = 'block';
+            }
+        }
 
-                window.BaalUtils.showToast('배경 제거 완료!', 'success', 5000);
+        async function startProcessing() {
+            if (isProcessing || uploadedImages.length === 0) return;
 
-            } catch (error) {
-                console.error('Background removal error:', error);
-                document.getElementById('progressContainer').style.display = 'none';
-                window.BaalUtils.showToast('배경 제거 실패: ' + error.message, 'error', 5000);
+            isProcessing = true;
+            document.getElementById('startBtn').disabled = true;
+            document.getElementById('progressContainer').style.display = 'block';
+
+            for (let i = 0; i < uploadedImages.length; i++) {
+                const img = uploadedImages[i];
+
+                // 상태 업데이트
+                updateImageStatus(i, 'processing');
+
+                try {
+                    // 배경 제거 실행
+                    const imageBlob = await removeBackground(img.file, {
+                        progress: (key, current, total) => {
+                            const progress = Math.round((current / total) * 100);
+                            document.getElementById('progressFill').style.width = progress + '%';
+
+                            if (key === 'compute:inference') {
+                                document.getElementById('progressText').textContent = `${getText('processing')} (${i + 1}/${uploadedImages.length}) ${progress}%`;
+                            } else if (key === 'fetch:model') {
+                                document.getElementById('progressText').textContent = `${getText('modelDownload')} ${progress}%`;
+                            }
+                        }
+                    });
+
+                    img.resultBlob = imageBlob;
+                    img.resultUrl = URL.createObjectURL(imageBlob);
+                    img.status = 'completed';
+
+                    updateImageStatus(i, 'completed');
+
+                    // 첫 번째 이미지는 자동으로 표시
+                    if (i === 0) {
+                        displayComparison(img.file, img.resultBlob);
+                        document.getElementById('downloadOptions').style.display = 'block';
+                    }
+
+                } catch (error) {
+                    console.error('Background removal error:', error);
+                    img.status = 'error';
+                    updateImageStatus(i, 'error');
+                    window.BaalUtils.showToast(`${getText('error')}: ${img.file.name}`, 'error', 3000);
+                }
+            }
+
+            // 진행률 숨김
+            document.getElementById('progressContainer').style.display = 'none';
+            document.getElementById('startBtn').disabled = false;
+            isProcessing = false;
+
+            window.BaalUtils.showToast(getText('completed'), 'success', 3000);
+        }
+
+        function updateImageStatus(index, status) {
+            const items = document.querySelectorAll('.image-item');
+            if (items[index]) {
+                const badge = items[index].querySelector('.status-badge');
+                badge.className = `status-badge ${status}`;
+
+                if (status === 'processing') {
+                    badge.textContent = getText('processing');
+                } else if (status === 'completed') {
+                    badge.textContent = getText('done');
+                } else if (status === 'error') {
+                    badge.textContent = getText('error');
+                } else {
+                    badge.textContent = getText('waiting');
+                }
             }
         }
 
         async function displayComparison(originalFile, resultBlob) {
             const container = document.getElementById('comparisonContainer');
-            document.getElementById('placeholder').style.display = 'none';
+            const placeholder = document.getElementById('placeholder');
+            if (placeholder) placeholder.style.display = 'none';
 
             // 원본 이미지 URL
             const originalUrl = URL.createObjectURL(originalFile);
@@ -449,6 +807,8 @@
             const overlay = document.getElementById('resultOverlay');
             const wrapper = document.getElementById('comparisonWrapper');
 
+            if (!handle || !overlay || !wrapper) return;
+
             let isDragging = false;
 
             handle.addEventListener('mousedown', () => {
@@ -472,7 +832,8 @@
             });
 
             // 터치 이벤트 (모바일)
-            handle.addEventListener('touchstart', () => {
+            handle.addEventListener('touchstart', (e) => {
+                e.preventDefault();
                 isDragging = true;
             });
 
@@ -504,11 +865,15 @@
 
         // 다운로드
         document.getElementById('downloadBtn').addEventListener('click', async () => {
-            if (!resultBlob) return;
+            const currentImg = uploadedImages[currentImageIndex];
+            if (!currentImg || !currentImg.resultBlob) return;
+
+            const resultBlob = currentImg.resultBlob;
 
             if (selectedBgColor === 'transparent') {
                 // 투명 배경 그대로 다운로드
-                window.BaalUtils.downloadFile(resultBlob, 'removed-bg.png');
+                const filename = currentImg.file.name.replace(/\.[^/.]+$/, '') + '-removed-bg.png';
+                window.BaalUtils.downloadFile(resultBlob, filename);
             } else {
                 // 배경색 추가
                 const img = new Image();
@@ -528,13 +893,14 @@
                 ctx.drawImage(img, 0, 0);
 
                 canvas.toBlob((blob) => {
-                    window.BaalUtils.downloadFile(blob, 'removed-bg.png');
+                    const filename = currentImg.file.name.replace(/\.[^/.]+$/, '') + '-removed-bg.png';
+                    window.BaalUtils.downloadFile(blob, filename);
                 }, 'image/png');
 
                 URL.revokeObjectURL(img.src);
             }
 
-            window.BaalUtils.showToast('다운로드 완료!', 'success', 5000);
+            window.BaalUtils.showToast('다운로드 완료!', 'success', 3000);
         });
     </script>
 </body>
