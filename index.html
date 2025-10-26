@@ -648,7 +648,34 @@
             }));
 
             displayImageList();
+            showFirstImagePreview();
             document.getElementById('startBtn').style.display = 'block';
+        }
+
+        function showFirstImagePreview() {
+            if (uploadedImages.length === 0) return;
+
+            const comparisonContainer = document.getElementById('comparisonContainer');
+            const placeholder = document.getElementById('placeholder');
+
+            // placeholder 숨기기
+            if (placeholder) {
+                placeholder.style.display = 'none';
+            }
+
+            // 첫 번째 이미지 미리보기 표시
+            const firstImage = uploadedImages[0];
+            comparisonContainer.innerHTML = `
+                <div style="text-align: center;">
+                    <img src="${firstImage.originalUrl}" alt="Preview" style="max-width: 100%; border-radius: var(--border-radius-md); box-shadow: var(--shadow-sm);">
+                    <p style="margin-top: 15px; color: var(--text-secondary); font-size: 0.9em;">
+                        <span data-ko="시작 버튼을 눌러 배경 제거를 시작하세요" data-en="Click start button to begin background removal">시작 버튼을 눌러 배경 제거를 시작하세요</span>
+                    </p>
+                </div>
+            `;
+
+            // 다국어 적용
+            window.BaalUtils.updateLanguage();
         }
 
         function displayImageList() {
@@ -715,9 +742,24 @@
             });
 
             const img = uploadedImages[index];
+            const comparisonContainer = document.getElementById('comparisonContainer');
+
             if (img.resultBlob) {
+                // 처리 완료된 경우: 비교 뷰 표시
                 displayComparison(img.file, img.resultBlob);
                 document.getElementById('downloadOptions').style.display = 'block';
+            } else {
+                // 처리 전인 경우: 원본 이미지 미리보기
+                comparisonContainer.innerHTML = `
+                    <div style="text-align: center;">
+                        <img src="${img.originalUrl}" alt="Preview" style="max-width: 100%; border-radius: var(--border-radius-md); box-shadow: var(--shadow-sm);">
+                        <p style="margin-top: 15px; color: var(--text-secondary); font-size: 0.9em;">
+                            <span data-ko="시작 버튼을 눌러 배경 제거를 시작하세요" data-en="Click start button to begin background removal">시작 버튼을 눌러 배경 제거를 시작하세요</span>
+                        </p>
+                    </div>
+                `;
+                window.BaalUtils.updateLanguage();
+                document.getElementById('downloadOptions').style.display = 'none';
             }
         }
 
