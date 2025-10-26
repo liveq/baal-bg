@@ -358,15 +358,22 @@
     <script type="module">
         import { removeBackground } from 'https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.4.5/dist/index.mjs';
 
+        // 페이지 로드 시 스크롤 맨 위로
+        window.scrollTo(0, 0);
+
         let originalImage = null;
         let resultBlob = null;
         let selectedBgColor = 'transparent';
 
-        // 파일 업로드
-        window.BaalUtils.initDropzone('dropzone', 'fileInput', handleFile, {
-            accept: 'image/*',
-            maxFiles: 1,
-            maxSize: 10 * 1024 * 1024
+        // 파일 업로드 (DOMContentLoaded 후에 실행)
+        document.addEventListener('DOMContentLoaded', () => {
+            if (window.BaalUtils && window.BaalUtils.initDropzone) {
+                window.BaalUtils.initDropzone('dropzone', 'fileInput', handleFile, {
+                    accept: 'image/*',
+                    maxFiles: 1,
+                    maxSize: 10 * 1024 * 1024
+                });
+            }
         });
 
         async function handleFile(files) {
