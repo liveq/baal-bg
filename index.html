@@ -812,7 +812,8 @@
 
             // 다국어 적용
             if (window.BaalUtils && window.BaalUtils.updateLanguage) {
-                window.BaalUtils.updateLanguage();
+                const currentLang = document.body.getAttribute('data-lang') || 'ko';
+                window.BaalUtils.updateLanguage(currentLang);
                 console.log('Language updated');
             } else {
                 console.warn('BaalUtils.updateLanguage not available');
@@ -905,7 +906,8 @@
                         </p>
                     </div>
                 `;
-                window.BaalUtils.updateLanguage();
+                const currentLang = document.body.getAttribute('data-lang') || 'ko';
+                window.BaalUtils.updateLanguage(currentLang);
                 document.getElementById('downloadOptions').style.display = 'none';
             }
         }
@@ -928,12 +930,21 @@
                     const imageBlob = await removeBackground(img.file, {
                         progress: (key, current, total) => {
                             const progress = Math.round((current / total) * 100);
-                            document.getElementById('progressFill').style.width = progress + '%';
+                            console.log(`Progress: ${key} ${progress}%`);
 
-                            if (key === 'compute:inference') {
-                                document.getElementById('progressText').textContent = `${getText('processing')} (${i + 1}/${uploadedImages.length}) ${progress}%`;
-                            } else if (key === 'fetch:model') {
-                                document.getElementById('progressText').textContent = `${getText('modelDownload')} ${progress}%`;
+                            const progressFill = document.getElementById('progressFill');
+                            const progressText = document.getElementById('progressText');
+
+                            if (progressFill) {
+                                progressFill.style.width = progress + '%';
+                            }
+
+                            if (progressText) {
+                                if (key === 'compute:inference') {
+                                    progressText.textContent = `${getText('processing')} (${i + 1}/${uploadedImages.length}) ${progress}%`;
+                                } else if (key === 'fetch:model') {
+                                    progressText.textContent = `${getText('modelDownload')} ${progress}%`;
+                                }
                             }
                         }
                     });
