@@ -805,12 +805,12 @@
             console.log('First image:', firstImage);
 
             comparisonContainer.innerHTML = `
-                <div style="text-align: center;">
-                    <img src="${firstImage.originalUrl}" alt="Preview" style="max-width: 100%; border-radius: var(--border-radius-md); box-shadow: var(--shadow-sm);">
-                    <p style="margin-top: 15px; color: var(--text-secondary); font-size: 0.9em;">
-                        <span data-ko="시작 버튼을 눌러 배경 제거를 시작하세요" data-en="Click start button to begin background removal">시작 버튼을 눌러 배경 제거를 시작하세요</span>
-                    </p>
+                <div class="comparison-wrapper" id="beforeWrapper">
+                    <img src="${firstImage.originalUrl}" alt="Preview" id="beforeImg">
                 </div>
+                <p style="margin-top: 15px; color: var(--text-secondary); font-size: 0.9em;">
+                    <span data-ko="시작 버튼을 눌러 배경 제거를 시작하세요" data-en="Click start button to begin background removal">시작 버튼을 눌러 배경 제거를 시작하세요</span>
+                </p>
             `;
             console.log('Preview HTML set');
 
@@ -822,6 +822,30 @@
             } else {
                 console.warn('BaalUtils.updateLanguage not available');
             }
+
+            // 디버그: 이미지 로드 후 크기 확인
+            setTimeout(() => {
+                const wrapper = document.getElementById('beforeWrapper');
+                const img = document.getElementById('beforeImg');
+                if (wrapper && img) {
+                    const wrapperStyle = window.getComputedStyle(wrapper);
+                    const imgStyle = window.getComputedStyle(img);
+                    console.log('📐 [업로드 당시] wrapper:', {
+                        width: wrapper.offsetWidth,
+                        height: wrapper.offsetHeight,
+                        maxWidth: wrapperStyle.maxWidth,
+                        maxHeight: wrapperStyle.maxHeight
+                    });
+                    console.log('📐 [업로드 당시] img:', {
+                        width: img.offsetWidth,
+                        height: img.offsetHeight,
+                        naturalWidth: img.naturalWidth,
+                        naturalHeight: img.naturalHeight,
+                        maxWidth: imgStyle.maxWidth,
+                        maxHeight: imgStyle.maxHeight
+                    });
+                }
+            }, 100);
 
             console.log('=== showFirstImagePreview END ===');
         }
@@ -910,16 +934,40 @@
             } else {
                 // 처리 전인 경우: 원본 이미지 미리보기
                 comparisonContainer.innerHTML = `
-                    <div style="text-align: center;">
-                        <img src="${img.originalUrl}" alt="Preview" style="max-width: 100%; border-radius: var(--border-radius-md); box-shadow: var(--shadow-sm);">
-                        <p style="margin-top: 15px; color: var(--text-secondary); font-size: 0.9em;">
-                            <span data-ko="시작 버튼을 눌러 배경 제거를 시작하세요" data-en="Click start button to begin background removal">시작 버튼을 눌러 배경 제거를 시작하세요</span>
-                        </p>
+                    <div class="comparison-wrapper" id="beforeWrapper">
+                        <img src="${img.originalUrl}" alt="Preview" id="beforeImg">
                     </div>
+                    <p style="margin-top: 15px; color: var(--text-secondary); font-size: 0.9em;">
+                        <span data-ko="시작 버튼을 눌러 배경 제거를 시작하세요" data-en="Click start button to begin background removal">시작 버튼을 눌러 배경 제거를 시작하세요</span>
+                    </p>
                 `;
                 const currentLang = document.body.getAttribute('data-lang') || 'ko';
                 window.BaalUtils.updateLanguage(currentLang);
                 document.getElementById('downloadOptions').style.display = 'none';
+
+                // 디버그: 이미지 로드 후 크기 확인
+                setTimeout(() => {
+                    const wrapper = document.getElementById('beforeWrapper');
+                    const img = document.getElementById('beforeImg');
+                    if (wrapper && img) {
+                        const wrapperStyle = window.getComputedStyle(wrapper);
+                        const imgStyle = window.getComputedStyle(img);
+                        console.log('📐 [업로드 당시] wrapper:', {
+                            width: wrapper.offsetWidth,
+                            height: wrapper.offsetHeight,
+                            maxWidth: wrapperStyle.maxWidth,
+                            maxHeight: wrapperStyle.maxHeight
+                        });
+                        console.log('📐 [업로드 당시] img:', {
+                            width: img.offsetWidth,
+                            height: img.offsetHeight,
+                            naturalWidth: img.naturalWidth,
+                            naturalHeight: img.naturalHeight,
+                            maxWidth: imgStyle.maxWidth,
+                            maxHeight: imgStyle.maxHeight
+                        });
+                    }
+                }, 100);
             }
         }
 
@@ -1038,6 +1086,30 @@
                     <div class="slider-handle" id="sliderHandle">⇔</div>
                 </div>
             `;
+
+            // 디버그: 이미지 로드 후 크기 확인
+            setTimeout(() => {
+                const wrapper = document.getElementById('comparisonWrapper');
+                const img = document.getElementById('originalImg');
+                if (wrapper && img) {
+                    const wrapperStyle = window.getComputedStyle(wrapper);
+                    const imgStyle = window.getComputedStyle(img);
+                    console.log('📐 [작업 완료 후] wrapper:', {
+                        width: wrapper.offsetWidth,
+                        height: wrapper.offsetHeight,
+                        maxWidth: wrapperStyle.maxWidth,
+                        maxHeight: wrapperStyle.maxHeight
+                    });
+                    console.log('📐 [작업 완료 후] img:', {
+                        width: img.offsetWidth,
+                        height: img.offsetHeight,
+                        naturalWidth: img.naturalWidth,
+                        naturalHeight: img.naturalHeight,
+                        maxWidth: imgStyle.maxWidth,
+                        maxHeight: imgStyle.maxHeight
+                    });
+                }
+            }, 100);
 
             // 슬라이더 드래그 기능
             setupSlider();
