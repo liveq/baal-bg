@@ -582,6 +582,10 @@
 
         console.log('✅ removeBackground imported:', typeof removeBackground);
 
+        // 전역 변수: 현재 처리 중인 이미지 번호
+        let currentProcessingIndex = 0;
+        let totalProcessingImages = 0;
+
         // 강제로 스크롤 맨 위로
         if ('scrollRestoration' in history) {
             history.scrollRestoration = 'manual';
@@ -919,10 +923,13 @@
             document.getElementById('startBtn').disabled = true;
             document.getElementById('progressContainer').style.display = 'block';
 
+            totalProcessingImages = uploadedImages.length;
+
             for (let i = 0; i < uploadedImages.length; i++) {
                 const img = uploadedImages[i];
-                const currentIndex = i; // 클로저를 위해 인덱스 캡처
-                const totalImages = uploadedImages.length;
+                currentProcessingIndex = i + 1; // 전역 변수 업데이트
+
+                console.log(`🔄 Starting image ${currentProcessingIndex}/${totalProcessingImages}: ${img.file.name}`);
 
                 // 상태 업데이트
                 updateImageStatus(i, 'processing');
@@ -932,7 +939,7 @@
                     const imageBlob = await removeBackground(img.file, {
                         progress: (key, current, total) => {
                             const progress = Math.round((current / total) * 100);
-                            console.log(`Progress [${currentIndex + 1}/${totalImages}]: ${key} ${progress}%`);
+                            console.log(`Progress [${currentProcessingIndex}/${totalProcessingImages}]: ${key} ${progress}%`);
 
                             const progressFill = document.getElementById('progressFill');
                             const progressText = document.getElementById('progressText');
@@ -943,9 +950,9 @@
 
                             if (progressText) {
                                 if (key === 'compute:inference') {
-                                    progressText.textContent = `${getText('processing')} (${currentIndex + 1}/${totalImages}) ${progress}%`;
+                                    progressText.textContent = `${getText('processing')} (${currentProcessingIndex}/${totalProcessingImages}) ${progress}%`;
                                 } else if (key === 'fetch:model') {
-                                    progressText.textContent = `${getText('modelDownload')} (${currentIndex + 1}/${totalImages}) ${progress}%`;
+                                    progressText.textContent = `${getText('modelDownload')} (${currentProcessingIndex}/${totalProcessingImages}) ${progress}%`;
                                 }
                             }
                         }

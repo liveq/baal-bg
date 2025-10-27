@@ -2,7 +2,7 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 
-const PORT = 4001;
+const PORT = 4002;
 
 const mimeTypes = {
   '.html': 'text/html',
@@ -23,6 +23,11 @@ const server = http.createServer((req, res) => {
   res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
   res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
   res.setHeader('Access-Control-Allow-Origin', '*');
+
+  // 캐시 비활성화 (개발용)
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
 
   let filePath = '.' + req.url;
   if (filePath === './') {
