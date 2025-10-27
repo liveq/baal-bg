@@ -77,12 +77,11 @@ const showToast = (message, type = 'info', duration = 3000) => {
     toast.className = `toast toast-${type}`;
     toast.textContent = message;
 
-    // 스타일 추가
+    // 스타일 추가 (우측 하단)
     toast.style.cssText = `
         position: fixed;
         bottom: 30px;
-        left: 50%;
-        transform: translateX(-50%);
+        right: 30px;
         background: ${type === 'error' ? '#c92a2a' : type === 'success' ? '#2f9e44' : '#1864ab'};
         color: white;
         padding: 16px 24px;
@@ -90,7 +89,7 @@ const showToast = (message, type = 'info', duration = 3000) => {
         box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
         z-index: 10000;
         font-weight: 600;
-        animation: slideUp 0.3s ease;
+        animation: slideInRight 0.3s ease;
     `;
 
     document.body.appendChild(toast);
@@ -98,14 +97,24 @@ const showToast = (message, type = 'info', duration = 3000) => {
     // 애니메이션 추가
     const style = document.createElement('style');
     style.textContent = `
-        @keyframes slideUp {
+        @keyframes slideInRight {
             from {
                 opacity: 0;
-                transform: translateX(-50%) translateY(20px);
+                transform: translateX(100px);
             }
             to {
                 opacity: 1;
-                transform: translateX(-50%) translateY(0);
+                transform: translateX(0);
+            }
+        }
+        @keyframes slideOutRight {
+            from {
+                opacity: 1;
+                transform: translateX(0);
+            }
+            to {
+                opacity: 0;
+                transform: translateX(100px);
             }
         }
     `;
@@ -113,7 +122,7 @@ const showToast = (message, type = 'info', duration = 3000) => {
 
     // 자동 제거
     setTimeout(() => {
-        toast.style.animation = 'slideUp 0.3s ease reverse';
+        toast.style.animation = 'slideOutRight 0.3s ease';
         setTimeout(() => toast.remove(), 300);
     }, duration);
 };
@@ -402,5 +411,6 @@ window.BaalUtils = {
     hideLoading,
     downloadFile,
     initDropzone,
-    detectBrowserLanguage
+    detectBrowserLanguage,
+    updateLanguage
 };

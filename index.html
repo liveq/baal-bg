@@ -308,6 +308,35 @@
             font-weight: bold;
         }
 
+        /* 커스텀 색상 버튼 */
+        .bg-color-btn.custom-color-btn {
+            background: linear-gradient(135deg,
+                #ff0000 0%, #ff7f00 16.66%, #ffff00 33.33%,
+                #00ff00 50%, #0000ff 66.66%, #8b00ff 83.33%, #ff0000 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .bg-color-btn.custom-color-btn span {
+            color: white;
+            text-shadow:
+                -1px -1px 0 #000,
+                1px -1px 0 #000,
+                -1px 1px 0 #000,
+                1px 1px 0 #000,
+                0 0 5px rgba(0, 0, 0, 0.5);
+        }
+
+        .bg-color-btn.custom-color-btn.active::after {
+            text-shadow:
+                -1px -1px 0 #000,
+                1px -1px 0 #000,
+                -1px 1px 0 #000,
+                1px 1px 0 #000,
+                0 0 5px rgba(0, 0, 0, 0.8);
+        }
+
         /* 버튼 */
         .btn-process {
             padding: 18px 60px;
@@ -439,11 +468,17 @@
                         <button class="bg-color-btn" data-color="#000000" style="background: #000000;" title="검정"></button>
                         <button class="bg-color-btn" data-color="#f0f0f0" style="background: #f0f0f0;" title="회색"></button>
                         <button class="bg-color-btn" data-color="#d4af37" style="background: #d4af37;" title="골드"></button>
+                        <!-- 커스텀 색상 선택 버튼 -->
+                        <button class="bg-color-btn custom-color-btn" id="customColorBtn" title="색상 선택">
+                            <span style="font-size: 24px; font-weight: bold;">+</span>
+                            <input type="color" id="customColorPicker" style="position: absolute; opacity: 0; pointer-events: none;">
+                        </button>
                     </div>
                 </div>
 
                 <div class="download-buttons">
                     <button class="btn-download" id="downloadBtn" data-ko="다운로드 (PNG)" data-en="Download (PNG)">다운로드 (PNG)</button>
+                    <button class="btn-download" id="downloadAllBtn" style="display: none;" data-ko="📦 일괄 다운로드 (ZIP)" data-en="📦 Download All (ZIP)">📦 일괄 다운로드 (ZIP)</button>
                 </div>
             </div>
         </main>
@@ -467,6 +502,7 @@
     </div>
 
     <!-- Import Map for ES Modules -->
+    <!-- esm.sh automatically resolves all dependencies, no need for explicit mapping -->
     <script type="importmap">
     {
         "imports": {
@@ -480,6 +516,25 @@
 
     <!-- 파일 업로드 초기화 (모듈 외부) -->
     <script>
+        // 전역 테스트 함수
+        window.testFileUpload = function() {
+            console.log('=== MANUAL TEST START ===');
+            const fileInput = document.getElementById('fileInput');
+            console.log('fileInput:', fileInput);
+            console.log('fileInput.files:', fileInput.files);
+            console.log('fileInput.files.length:', fileInput.files.length);
+
+            if (fileInput.files.length > 0) {
+                console.log('Files detected:', Array.from(fileInput.files));
+                // 수동으로 change 이벤트 발생
+                const event = new Event('change', { bubbles: true });
+                fileInput.dispatchEvent(event);
+                console.log('Change event dispatched');
+            } else {
+                console.log('No files selected');
+            }
+        };
+
         // 즉시 파일 입력 초기화
         window.addEventListener('DOMContentLoaded', () => {
             console.log('=== FILE INPUT INIT START ===');
@@ -494,16 +549,38 @@
                 dropzone.onclick = function() {
                     console.log('>>> DROPZONE CLICKED <<<');
                     fileInput.click();
+                    console.log('fileInput.click() called');
+
+                    // 파일 선택 후 테스트를 위해 약간의 지연
+                    setTimeout(() => {
+                        console.log('Checking if file was selected...');
+                        console.log('fileInput.files.length:', fileInput.files.length);
+                    }, 1000);
                 };
                 console.log('✅ Click handler attached');
+
+                // 파일 input change 이벤트 직접 추가 (테스트)
+                fileInput.addEventListener('change', (e) => {
+                    console.log('🔥 FILE INPUT CHANGE EVENT (outside module)');
+                    console.log('Event:', e);
+                    console.log('Files:', e.target.files);
+                    console.log('Files length:', e.target.files.length);
+                });
             } else {
                 console.error('❌ Elements not found!');
             }
         });
     </script>
 
+    <!-- JSZip for batch download -->
+    <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+
     <script type="module">
-        import { removeBackground } from 'https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.4.5/dist/index.mjs';
+        console.log('🚀 MODULE SCRIPT START');
+
+        import { removeBackground } from 'https://esm.sh/@imgly/background-removal@1.4.5';
+
+        console.log('✅ removeBackground imported:', typeof removeBackground);
 
         // 강제로 스크롤 맨 위로
         if ('scrollRestoration' in history) {
@@ -559,23 +636,32 @@
 
         // 파일 업로드 이벤트 (모듈 내부)
         const initializeApp = () => {
+            console.log('📦 initializeApp() called');
+
             const fileInput = document.getElementById('fileInput');
             const startBtn = document.getElementById('startBtn');
 
+            console.log('fileInput element:', fileInput);
+            console.log('startBtn element:', startBtn);
+
             if (!fileInput || !startBtn) {
-                console.error('Required elements not found:', { fileInput, startBtn });
+                console.error('❌ Required elements not found:', { fileInput, startBtn });
                 return;
             }
 
-            console.log('Module initialized with elements:', { fileInput, startBtn });
+            console.log('✅ Module initialized with elements:', { fileInput, startBtn });
 
             // 파일 선택 시
             fileInput.addEventListener('change', (e) => {
-                console.log('File input changed:', e.target.files);
+                console.log('🔥 FILE INPUT CHANGE EVENT (inside module)');
+                console.log('Event:', e);
+                console.log('e.target.files:', e.target.files);
                 const filesArray = Array.from(e.target.files);
                 console.log('Files array:', filesArray);
                 handleFiles(filesArray);
             });
+
+            console.log('✅ Change event listener attached to fileInput');
 
             // 드래그 앤 드롭
             const dropzone = document.getElementById('dropzone');
@@ -617,15 +703,24 @@
         };
 
         // DOM 준비 확인 및 초기화
+        console.log('📌 document.readyState:', document.readyState);
+
         if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', initializeApp);
+            console.log('⏳ DOM is loading, adding DOMContentLoaded listener');
+            document.addEventListener('DOMContentLoaded', () => {
+                console.log('✅ DOMContentLoaded fired, calling initializeApp');
+                initializeApp();
+            });
         } else {
-            // DOM이 이미 로드됨
+            console.log('✅ DOM already loaded, calling initializeApp immediately');
             initializeApp();
         }
 
         function handleFiles(files) {
+            console.log('=== handleFiles START ===');
             console.log('handleFiles called with:', files);
+            console.log('Files length:', files.length);
+
             if (files.length === 0) {
                 console.log('No files provided');
                 return;
@@ -634,6 +729,7 @@
             // 이미지 파일만 필터링
             const imageFiles = files.filter(f => f.type.startsWith('image/'));
             console.log('Image files filtered:', imageFiles);
+            console.log('Image files length:', imageFiles.length);
 
             if (imageFiles.length === 0) {
                 console.log('No image files found');
@@ -644,10 +740,12 @@
             // 파일 크기 체크 (10MB)
             const oversized = imageFiles.filter(f => f.size > 10 * 1024 * 1024);
             if (oversized.length > 0) {
+                console.log('Oversized files detected:', oversized);
                 window.BaalUtils.showToast('파일 크기는 10MB 이하여야 합니다.', 'error', 3000);
                 return;
             }
 
+            console.log('Creating uploadedImages array...');
             uploadedImages = imageFiles.map((file, index) => ({
                 id: Date.now() + index,
                 file: file,
@@ -656,25 +754,52 @@
                 resultBlob: null,
                 resultUrl: null
             }));
+            console.log('uploadedImages created:', uploadedImages);
 
+            console.log('Calling displayImageList()...');
             displayImageList();
+
+            console.log('Calling showFirstImagePreview()...');
             showFirstImagePreview();
-            document.getElementById('startBtn').style.display = 'block';
+
+            console.log('Showing start button...');
+            const startBtn = document.getElementById('startBtn');
+            console.log('startBtn element:', startBtn);
+            if (startBtn) {
+                startBtn.style.display = 'block';
+                console.log('✅ Start button shown');
+            } else {
+                console.error('❌ startBtn not found!');
+            }
+
+            console.log('=== handleFiles END ===');
         }
 
         function showFirstImagePreview() {
-            if (uploadedImages.length === 0) return;
+            console.log('=== showFirstImagePreview START ===');
+            console.log('uploadedImages.length:', uploadedImages.length);
+
+            if (uploadedImages.length === 0) {
+                console.log('No uploaded images, returning');
+                return;
+            }
 
             const comparisonContainer = document.getElementById('comparisonContainer');
             const placeholder = document.getElementById('placeholder');
 
+            console.log('comparisonContainer:', comparisonContainer);
+            console.log('placeholder:', placeholder);
+
             // placeholder 숨기기
             if (placeholder) {
                 placeholder.style.display = 'none';
+                console.log('Placeholder hidden');
             }
 
             // 첫 번째 이미지 미리보기 표시
             const firstImage = uploadedImages[0];
+            console.log('First image:', firstImage);
+
             comparisonContainer.innerHTML = `
                 <div style="text-align: center;">
                     <img src="${firstImage.originalUrl}" alt="Preview" style="max-width: 100%; border-radius: var(--border-radius-md); box-shadow: var(--shadow-sm);">
@@ -683,15 +808,27 @@
                     </p>
                 </div>
             `;
+            console.log('Preview HTML set');
 
             // 다국어 적용
-            window.BaalUtils.updateLanguage();
+            if (window.BaalUtils && window.BaalUtils.updateLanguage) {
+                window.BaalUtils.updateLanguage();
+                console.log('Language updated');
+            } else {
+                console.warn('BaalUtils.updateLanguage not available');
+            }
+
+            console.log('=== showFirstImagePreview END ===');
         }
 
         function displayImageList() {
+            console.log('=== displayImageList START ===');
             const imageList = document.getElementById('imageList');
+            console.log('imageList element:', imageList);
+
             imageList.style.display = 'grid';
             imageList.innerHTML = '';
+            console.log('Image list cleared, uploading', uploadedImages.length, 'images');
 
             uploadedImages.forEach((img, index) => {
                 const item = document.createElement('div');
@@ -826,6 +963,15 @@
             document.getElementById('startBtn').disabled = false;
             isProcessing = false;
 
+            // 일괄 다운로드 버튼 표시 (2개 이상 완료된 경우)
+            const completedCount = uploadedImages.filter(img => img.status === 'completed' && img.resultBlob).length;
+            const downloadAllBtn = document.getElementById('downloadAllBtn');
+            if (completedCount >= 2) {
+                downloadAllBtn.style.display = 'inline-block';
+            } else {
+                downloadAllBtn.style.display = 'none';
+            }
+
             window.BaalUtils.showToast(getText('completed'), 'success', 3000);
         }
 
@@ -922,14 +1068,172 @@
             });
         }
 
-        // 배경색 선택
-        document.querySelectorAll('.bg-color-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
+        // 배경색 선택 (실시간 미리보기 - 모든 이미지에 적용)
+        document.querySelectorAll('.bg-color-btn:not(.custom-color-btn)').forEach(btn => {
+            btn.addEventListener('click', async () => {
                 selectedBgColor = btn.dataset.color;
                 document.querySelectorAll('.bg-color-btn').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
+
+                // 현재 보고 있는 이미지 미리보기 업데이트
+                const currentImg = uploadedImages[currentImageIndex];
+                if (currentImg && currentImg.resultBlob) {
+                    console.log('🎨 Updating preview with new background color:', selectedBgColor);
+                    await updatePreviewWithBackground(currentImg.file, currentImg.resultBlob, selectedBgColor);
+                }
+
+                // 모든 썸네일 이미지에도 배경색 적용
+                await updateAllThumbnails(selectedBgColor);
             });
         });
+
+        // 커스텀 색상 선택 버튼
+        const customColorBtn = document.getElementById('customColorBtn');
+        const customColorPicker = document.getElementById('customColorPicker');
+
+        if (customColorBtn && customColorPicker) {
+            // + 버튼 클릭 시 색상 팔레트 열기
+            customColorBtn.addEventListener('click', () => {
+                customColorPicker.click();
+            });
+
+            // 색상 선택 시
+            customColorPicker.addEventListener('change', async (e) => {
+                const customColor = e.target.value;
+                console.log('🎨 Custom color selected:', customColor);
+
+                // 선택한 색상을 버튼에 적용
+                customColorBtn.style.background = customColor;
+
+                // 활성화 상태로 변경
+                selectedBgColor = customColor;
+                document.querySelectorAll('.bg-color-btn').forEach(b => b.classList.remove('active'));
+                customColorBtn.classList.add('active');
+
+                // 현재 보고 있는 이미지 미리보기 업데이트
+                const currentImg = uploadedImages[currentImageIndex];
+                if (currentImg && currentImg.resultBlob) {
+                    console.log('🎨 Updating preview with custom color:', customColor);
+                    await updatePreviewWithBackground(currentImg.file, currentImg.resultBlob, customColor);
+                }
+
+                // 모든 썸네일 이미지에도 배경색 적용
+                await updateAllThumbnails(customColor);
+            });
+        }
+
+        // 모든 썸네일 이미지에 배경색 적용
+        async function updateAllThumbnails(bgColor) {
+            const imageList = document.getElementById('imageList');
+            if (!imageList) return;
+
+            const items = imageList.querySelectorAll('.image-item');
+
+            for (let i = 0; i < uploadedImages.length; i++) {
+                const img = uploadedImages[i];
+
+                // 처리 완료된 이미지만 업데이트
+                if (img.status === 'completed' && img.resultBlob) {
+                    const item = items[i];
+                    if (!item) continue;
+
+                    const thumbnailImg = item.querySelector('img');
+                    if (!thumbnailImg) continue;
+
+                    let thumbnailUrl;
+
+                    if (bgColor === 'transparent') {
+                        // 투명 배경: 원본 사용
+                        thumbnailUrl = URL.createObjectURL(img.resultBlob);
+                    } else {
+                        // 배경색 적용: Canvas로 합성
+                        const image = new Image();
+                        image.src = URL.createObjectURL(img.resultBlob);
+                        await image.decode();
+
+                        const canvas = document.createElement('canvas');
+                        canvas.width = image.width;
+                        canvas.height = image.height;
+                        const ctx = canvas.getContext('2d');
+
+                        // 배경색 채우기
+                        ctx.fillStyle = bgColor;
+                        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                        // 결과 이미지 그리기
+                        ctx.drawImage(image, 0, 0);
+
+                        // Blob으로 변환
+                        const blob = await new Promise((resolve) => {
+                            canvas.toBlob(resolve, 'image/png');
+                        });
+
+                        thumbnailUrl = URL.createObjectURL(blob);
+                        URL.revokeObjectURL(image.src);
+                    }
+
+                    // 썸네일 이미지 업데이트
+                    const oldSrc = thumbnailImg.src;
+                    thumbnailImg.src = thumbnailUrl;
+
+                    // 이전 URL 정리
+                    if (oldSrc && oldSrc.startsWith('blob:')) {
+                        setTimeout(() => URL.revokeObjectURL(oldSrc), 100);
+                    }
+                }
+            }
+
+            console.log(`✅ Updated ${uploadedImages.filter(i => i.status === 'completed').length} thumbnails with background color: ${bgColor}`);
+        }
+
+        // 배경색이 적용된 미리보기 업데이트
+        async function updatePreviewWithBackground(originalFile, resultBlob, bgColor) {
+            const resultOverlay = document.getElementById('resultOverlay');
+            if (!resultOverlay) return;
+
+            let previewUrl;
+
+            if (bgColor === 'transparent') {
+                // 투명 배경: 원본 결과 이미지 사용
+                previewUrl = URL.createObjectURL(resultBlob);
+            } else {
+                // 배경색 적용: Canvas로 합성
+                const img = new Image();
+                img.src = URL.createObjectURL(resultBlob);
+                await img.decode();
+
+                const canvas = document.createElement('canvas');
+                canvas.width = img.width;
+                canvas.height = img.height;
+                const ctx = canvas.getContext('2d');
+
+                // 배경색 채우기
+                ctx.fillStyle = bgColor;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                // 결과 이미지 그리기
+                ctx.drawImage(img, 0, 0);
+
+                // Blob으로 변환
+                const blob = await new Promise((resolve) => {
+                    canvas.toBlob(resolve, 'image/png');
+                });
+
+                previewUrl = URL.createObjectURL(blob);
+                URL.revokeObjectURL(img.src);
+            }
+
+            // 미리보기 업데이트
+            const resultImg = resultOverlay.querySelector('img');
+            if (resultImg) {
+                const oldSrc = resultImg.src;
+                resultImg.src = previewUrl;
+                // 이전 URL 정리
+                if (oldSrc && oldSrc.startsWith('blob:')) {
+                    setTimeout(() => URL.revokeObjectURL(oldSrc), 100);
+                }
+            }
+        }
 
         // 다운로드
         document.getElementById('downloadBtn').addEventListener('click', async () => {
@@ -969,6 +1273,88 @@
             }
 
             window.BaalUtils.showToast('다운로드 완료!', 'success', 3000);
+        });
+
+        // 일괄 다운로드 (ZIP)
+        document.getElementById('downloadAllBtn').addEventListener('click', async () => {
+            console.log('📦 Starting batch download...');
+
+            // 완료된 이미지만 필터링
+            const completedImages = uploadedImages.filter(img => img.status === 'completed' && img.resultBlob);
+
+            if (completedImages.length === 0) {
+                window.BaalUtils.showToast('다운로드할 이미지가 없습니다.', 'error', 3000);
+                return;
+            }
+
+            try {
+                // JSZip 인스턴스 생성
+                const zip = new JSZip();
+                const folder = zip.folder('background-removed');
+
+                window.BaalUtils.showToast(`${completedImages.length}개 이미지 압축 중...`, 'info', 2000);
+
+                // 각 이미지를 ZIP에 추가
+                for (let i = 0; i < completedImages.length; i++) {
+                    const img = completedImages[i];
+                    const originalFilename = img.file.name.replace(/\.[^/.]+$/, '');
+
+                    if (selectedBgColor === 'transparent') {
+                        // 투명 배경: 원본 resultBlob 사용
+                        const arrayBuffer = await img.resultBlob.arrayBuffer();
+                        folder.file(`${originalFilename}-removed-bg.png`, arrayBuffer);
+                    } else {
+                        // 배경색 적용: Canvas로 합성
+                        const image = new Image();
+                        image.src = URL.createObjectURL(img.resultBlob);
+                        await image.decode();
+
+                        const canvas = document.createElement('canvas');
+                        canvas.width = image.width;
+                        canvas.height = image.height;
+                        const ctx = canvas.getContext('2d');
+
+                        // 배경색 채우기
+                        ctx.fillStyle = selectedBgColor;
+                        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                        // 결과 이미지 그리기
+                        ctx.drawImage(image, 0, 0);
+
+                        // Blob으로 변환
+                        const blob = await new Promise((resolve) => {
+                            canvas.toBlob(resolve, 'image/png');
+                        });
+
+                        const arrayBuffer = await blob.arrayBuffer();
+                        folder.file(`${originalFilename}-removed-bg.png`, arrayBuffer);
+
+                        URL.revokeObjectURL(image.src);
+                    }
+
+                    console.log(`✅ Added to ZIP: ${originalFilename} (${i + 1}/${completedImages.length})`);
+                }
+
+                // ZIP 파일 생성
+                const zipBlob = await zip.generateAsync({
+                    type: 'blob',
+                    compression: 'DEFLATE',
+                    compressionOptions: { level: 6 }
+                });
+
+                // 파일명 생성 (타임스탬프 포함)
+                const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+                const filename = `background-removed-${timestamp}.zip`;
+
+                // 다운로드
+                window.BaalUtils.downloadFile(zipBlob, filename);
+
+                window.BaalUtils.showToast(`✅ ${completedImages.length}개 파일 다운로드 완료!`, 'success', 3000);
+
+            } catch (error) {
+                console.error('ZIP download error:', error);
+                window.BaalUtils.showToast('일괄 다운로드 실패', 'error', 3000);
+            }
         });
     </script>
 </body>
