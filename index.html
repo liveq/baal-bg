@@ -435,9 +435,6 @@
                 </p>
             </div>
 
-            <!-- 업로드된 이미지 리스트 -->
-            <div class="image-list" id="imageList" style="display: none;"></div>
-
             <!-- 비교 미리보기 -->
             <div class="comparison-container" id="comparisonContainer">
                 <p class="placeholder-text" id="placeholder" data-ko="이미지를 업로드하면 미리보기에 표시됩니다" data-en="Uploaded images will be shown in preview">이미지를 업로드하면 미리보기에 표시됩니다</p>
@@ -455,6 +452,9 @@
                 </div>
                 <p class="progress-text" id="progressText">AI 모델 로딩 중...</p>
             </div>
+
+            <!-- 업로드된 이미지 리스트 -->
+            <div class="image-list" id="imageList" style="display: none;"></div>
 
             <!-- 배경색 옵션 -->
             <div class="download-options" id="downloadOptions">
@@ -886,7 +886,7 @@
             }
         }
 
-        function selectImage(index) {
+        async function selectImage(index) {
             currentImageIndex = index;
 
             document.querySelectorAll('.image-item').forEach((item, i) => {
@@ -898,7 +898,14 @@
 
             if (img.resultBlob) {
                 // 처리 완료된 경우: 비교 뷰 표시
-                displayComparison(img.file, img.resultBlob);
+                await displayComparison(img.file, img.resultBlob);
+
+                // 선택된 배경색이 있으면 미리보기에 적용
+                if (selectedBgColor) {
+                    console.log(`🎨 Applying selected background color to thumbnail: ${selectedBgColor}`);
+                    await updatePreviewWithBackground(img.file, img.resultBlob, selectedBgColor);
+                }
+
                 document.getElementById('downloadOptions').style.display = 'block';
             } else {
                 // 처리 전인 경우: 원본 이미지 미리보기
