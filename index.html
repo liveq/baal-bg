@@ -921,6 +921,8 @@
 
             for (let i = 0; i < uploadedImages.length; i++) {
                 const img = uploadedImages[i];
+                const currentIndex = i; // 클로저를 위해 인덱스 캡처
+                const totalImages = uploadedImages.length;
 
                 // 상태 업데이트
                 updateImageStatus(i, 'processing');
@@ -930,7 +932,7 @@
                     const imageBlob = await removeBackground(img.file, {
                         progress: (key, current, total) => {
                             const progress = Math.round((current / total) * 100);
-                            console.log(`Progress: ${key} ${progress}%`);
+                            console.log(`Progress [${currentIndex + 1}/${totalImages}]: ${key} ${progress}%`);
 
                             const progressFill = document.getElementById('progressFill');
                             const progressText = document.getElementById('progressText');
@@ -941,9 +943,9 @@
 
                             if (progressText) {
                                 if (key === 'compute:inference') {
-                                    progressText.textContent = `${getText('processing')} (${i + 1}/${uploadedImages.length}) ${progress}%`;
+                                    progressText.textContent = `${getText('processing')} (${currentIndex + 1}/${totalImages}) ${progress}%`;
                                 } else if (key === 'fetch:model') {
-                                    progressText.textContent = `${getText('modelDownload')} ${progress}%`;
+                                    progressText.textContent = `${getText('modelDownload')} (${currentIndex + 1}/${totalImages}) ${progress}%`;
                                 }
                             }
                         }
